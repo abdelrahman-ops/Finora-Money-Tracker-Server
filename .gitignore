@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.docker
+*.log
+*.env
+.env.local
+.env.example
+.env.test
+.env.prod
+.env.dev
+.env.test
+.env.prod
+.env.dev
+.env.docker.example
+.env.example

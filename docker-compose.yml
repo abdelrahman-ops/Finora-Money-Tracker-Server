@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: finora-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: finora
+
+  server:
+    build: .
+    container_name: finora-server
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    depends_on:
+      - mongodb
+    env_file:
+      - .env.docker
+    environment:
+      - NODE_ENV=production
+
+volumes:
+  mongo_data:

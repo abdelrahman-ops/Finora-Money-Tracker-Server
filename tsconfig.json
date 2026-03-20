@@ -14,12 +14,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleResolution": "node",
-    "baseUrl": "./src",
-    "paths": {
-      "@modules/*": ["modules/*"],
-      "@common/*": ["common/*"],
-      "@services/*": ["services/*"]
-    }
+    "baseUrl": "./src"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]

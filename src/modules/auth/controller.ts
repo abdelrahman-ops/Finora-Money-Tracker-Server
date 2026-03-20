@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from './service';
 import { HttpStatus } from '../../common/constants/httpStatus';
-import { logger } from '@common/utils/logger';
+import { logger } from '../../common/utils/logger';
 
 const authService = new AuthService();
 

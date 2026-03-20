@@ -8,7 +8,15 @@ import { errorHandler } from './common/middleware/errorHandler';
 import { requestLogger } from './common/middleware/requestLogger';
 import { registerRoutes } from './modules/index';
 
+import { connectDatabase } from './common/config/database';
+
 const app = express();
+
+// Set trust proxy for Vercel/proxies so express-rate-limit works properly
+app.set('trust proxy', 1);
+
+// Connect to DB for serverless environments (like Vercel) where app.ts is the entry point
+connectDatabase().catch(err => console.error('Initial DB connection error:', err));
 
 // ─── Security ───
 app.use(helmet());

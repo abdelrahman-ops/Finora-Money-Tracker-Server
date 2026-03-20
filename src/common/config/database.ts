@@ -3,6 +3,9 @@ import { env } from './env';
 import { logger } from '../utils/logger';
 
 export async function connectDatabase(): Promise<void> {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
   try {
     await mongoose.connect(env.MONGODB_URI);
     logger.info('✅ MongoDB connected successfully');

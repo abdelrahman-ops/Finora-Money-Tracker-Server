@@ -6,10 +6,10 @@ export const createTransactionSchema = z.object({
   name: z.string().default(''),
   note: z.string().optional(),
   accountId: z.string().min(1, 'Account is required'),
-  toAccountId: z.string().optional(),
-  categoryId: z.string().optional(),
-  debtId: z.string().optional(),
-  savingsGoalId: z.string().optional(),
+  toAccountId: z.string().nullish().transform(v => (v === 'none' || v === '' || v === null) ? undefined : v),
+  categoryId: z.string().nullish().transform(v => (v === 'none' || v === '' || v === null) ? undefined : v),
+  debtId: z.string().nullish().transform(v => (v === 'none' || v === '' || v === null) ? undefined : v),
+  savingsGoalId: z.string().nullish().transform(v => (v === 'none' || v === '' || v === null) ? undefined : v),
   date: z.string().min(1, 'Date is required'),
 });
 

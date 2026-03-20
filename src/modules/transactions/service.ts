@@ -19,7 +19,7 @@ export class TransactionService {
     if (query.type) filter.type = query.type;
 
     const page = query.page || 1;
-    const limit = Math.min(query.limit || 50, 100);
+    const limit = Math.min(query.limit || 50, 1000);
     const skip = (page - 1) * limit;
 
     const [transactions, total] = await Promise.all([

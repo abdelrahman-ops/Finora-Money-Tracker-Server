@@ -16,6 +16,7 @@ const DEFAULT_CATEGORIES = [
   { name: 'Investment', type: 'income' as const, color: '#8b5cf6', icon: 'trending-up' },
   { name: 'Gift', type: 'income' as const, color: '#ec4899', icon: 'gift' },
   { name: 'Other Income', type: 'income' as const, color: '#64748b', icon: 'plus-circle' },
+  { name: 'None', type: 'expense' as const, color: '#94a3b8', icon: 'slash' },
 ];
 
 export async function seedDefaultCategories(userId?: string): Promise<void> {

@@ -1,64 +1,15 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IRefreshSession {
-  sessionId: string;
-  tokenHash: string;
-  createdAt: Date;
-  expiresAt: Date;
-  lastRotatedAt: Date;
-  userAgent?: string;
-  ipAddress?: string;
-}
-
 export interface IUser extends Document {
   email: string;
-  password: string;
+  password?: string;
   name: string;
   currency: string;
-  tokenVersion: number;
-  refreshSessions: IRefreshSession[];
-  passwordResetTokenHash?: string;
-  passwordResetExpiresAt?: Date;
+  emailVerified: boolean;
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
 }
-
-const refreshSessionSchema = new Schema<IRefreshSession>(
-  {
-    sessionId: {
-      type: String,
-      required: true,
-    },
-    tokenHash: {
-      type: String,
-      required: true,
-      select: false,
-    },
-    createdAt: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-    expiresAt: {
-      type: Date,
-      required: true,
-    },
-    lastRotatedAt: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
-    userAgent: {
-      type: String,
-      default: '',
-    },
-    ipAddress: {
-      type: String,
-      default: '',
-    },
-  },
-  { _id: false },
-);
 
 const userSchema = new Schema<IUser>(
   {
@@ -72,7 +23,6 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
       select: false,
     },
     name: {
@@ -84,22 +34,12 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: 'EGP',
     },
-    tokenVersion: {
-      type: Number,
-      default: 0,
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
-    refreshSessions: {
-      type: [refreshSessionSchema],
-      default: [],
-      select: false,
-    },
-    passwordResetTokenHash: {
+    image: {
       type: String,
-      select: false,
-    },
-    passwordResetExpiresAt: {
-      type: Date,
-      select: false,
     },
   },
   {
@@ -107,9 +47,6 @@ const userSchema = new Schema<IUser>(
     toJSON: {
       transform(_doc, ret: Record<string, any>) {
         delete ret.password;
-        delete ret.refreshSessions;
-        delete ret.passwordResetTokenHash;
-        delete ret.passwordResetExpiresAt;
         delete ret.__v;
         return ret;
       },
@@ -118,3 +55,4 @@ const userSchema = new Schema<IUser>(
 );
 
 export const User = mongoose.model<IUser>('User', userSchema);
+

@@ -48,7 +48,8 @@ export async function calculateHealthScore(userId: string) {
   if (budgets.length > 0) {
     let overCount = 0;
     for (const budget of budgets) {
-      const catSpent = monthTxns.filter((t) => t.type === 'expense' && t.categoryId?.toString() === budget.categoryId.toString()).reduce((s, t) => s + t.amount, 0);
+      if (!budget.categoryId) continue;
+      const catSpent = monthTxns.filter((t) => t.type === 'expense' && t.categoryId?.toString() === budget.categoryId!.toString()).reduce((s, t) => s + t.amount, 0);
       if (catSpent > budget.limit) overCount++;
     }
     budgetScore = Math.round((1 - overCount / budgets.length) * 20);

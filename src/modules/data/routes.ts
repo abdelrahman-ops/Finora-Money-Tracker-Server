@@ -12,9 +12,59 @@ import { Setting } from '../settings/model';
 import { Alert } from '../alerts/model';
 import { Event } from '../events/model';
 import { seedDefaultCategories } from '../../common/utils/seed';
+import { generateNotifications } from '../notifications/engine';
 
 const router = Router();
 router.use(authenticate);
+
+// Unified bootstrap endpoint
+router.get('/bootstrap', asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+
+  // Auto-seed default categories if empty
+  const categoryCount = await Category.countDocuments({ userId });
+  if (categoryCount === 0) {
+    await seedDefaultCategories(userId);
+  }
+
+  // Auto-seed default wallets if empty
+  const walletCount = await Wallet.countDocuments({ userId });
+  if (walletCount === 0) {
+    await Wallet.insertMany([
+      { userId, name: 'Cash', type: 'cash', balance: 0, color: '#22c55e', icon: 'wallet' },
+      { userId, name: 'Bank', type: 'bank', balance: 0, color: '#007AFF', icon: 'landmark' },
+    ]);
+  }
+
+  // Pre-generate / sync notifications
+  const notifications = await generateNotifications(userId);
+
+  const [wallets, categories, transactions, templates, budgets, savingsGoals, debts, settings] = await Promise.all([
+    Wallet.find({ userId }).lean(),
+    Category.find({ $or: [{ userId }, { isDefault: true }] }).lean(),
+    Transaction.find({ userId }).sort({ date: -1, createdAt: -1 }).limit(100).lean(),
+    Template.find({ userId }).lean(),
+    Budget.find({ userId }).lean(),
+    SavingsGoal.find({ userId }).lean(),
+    Debt.find({ userId }).lean(),
+    Setting.findOne({ userId }).lean(),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      wallets,
+      categories,
+      transactions,
+      templates,
+      budgets,
+      savingsGoals,
+      debts,
+      settings,
+      notifications,
+    },
+  });
+}));
 
 // Full JSON export
 router.get('/export', asyncHandler(async (req: Request, res: Response) => {

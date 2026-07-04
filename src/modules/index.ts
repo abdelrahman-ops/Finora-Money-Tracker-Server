@@ -16,6 +16,7 @@ import intelligenceRoutes from './intelligence/routes';
 import parserRoutes from './parser/routes';
 import dataRoutes from './data/routes';
 import notificationRoutes from './notifications/routes';
+import aiRoutes from './ai/routes';
 
 /**
  * Register all API route modules under /api prefix.
@@ -39,6 +40,7 @@ export function registerRoutes(app: Express): void {
     ['/api/parse',         parserRoutes],
     ['/api/data',          dataRoutes],
     ['/api/notifications', notificationRoutes],
+    ['/api/ai',            aiRoutes],
   ];
 
   for (const [path, router] of routes) {

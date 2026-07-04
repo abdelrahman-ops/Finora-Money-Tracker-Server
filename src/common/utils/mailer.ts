@@ -56,3 +56,33 @@ export async function sendPasswordResetEmail(input: {
 
   return true;
 }
+
+export async function sendVerificationEmail(input: {
+  to: string;
+  name: string;
+  verificationUrl: string;
+}): Promise<boolean> {
+  const tx = getTransporter();
+  if (!tx) {
+    logger.warn('SMTP not configured. Email verification email skipped.');
+    return false;
+  }
+
+  const html = [
+    `<p>Hi ${input.name || 'there'},</p>`,
+    '<p>Thank you for signing up for Finora! Please verify your email address by clicking the link below:</p>',
+    `<p><a href="${input.verificationUrl}">Verify email address</a></p>`,
+    '<p>If you did not sign up for this account, you can ignore this message.</p>',
+  ].join('');
+
+  await tx.sendMail({
+    from: env.SMTP_FROM,
+    to: input.to,
+    subject: 'Verify your Finora email address',
+    html,
+    text: `Verify your email address: ${input.verificationUrl}`,
+  });
+
+  return true;
+}
+

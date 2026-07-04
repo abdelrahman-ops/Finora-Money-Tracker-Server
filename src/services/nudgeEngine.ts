@@ -25,7 +25,7 @@ export async function generateNudges(userId: string) {
 
   // Budget suggestions for unbudgeted categories
   const budgets = await Budget.find({ userId, monthKey }).lean();
-  const budgetedCats = new Set(budgets.map((b) => b.categoryId.toString()));
+  const budgetedCats = new Set(budgets.filter((b) => b.categoryId).map((b) => b.categoryId!.toString()));
   const monthCatTotals: Record<string, number> = {};
   monthExpenses.forEach((t) => {
     if (t.categoryId) monthCatTotals[t.categoryId.toString()] = (monthCatTotals[t.categoryId.toString()] || 0) + t.amount;

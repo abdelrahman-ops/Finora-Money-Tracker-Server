@@ -1,28 +1,11 @@
 import { Router } from 'express';
-import { AuthController } from './controller';
-import { validate } from '../../common/middleware/validate';
-import { authenticate } from '../../common/middleware/authenticate';
-import { authLimiter } from '../../common/middleware/rateLimiter';
-import { asyncHandler } from '../../common/utils/asyncHandler';
-import {
-	registerSchema,
-	loginSchema,
-	refreshSchema,
-	forgotPasswordSchema,
-	resetPasswordSchema,
-	logoutSchema,
-} from './validation';
+import { auth } from '../../common/config/auth';
+import { toNodeHandler } from 'better-auth/node';
 
 const router = Router();
-const ctrl = new AuthController();
 
-router.use(authLimiter);
-
-router.post('/register', validate(registerSchema), asyncHandler(ctrl.register));
-router.post('/login', validate(loginSchema), asyncHandler(ctrl.login));
-router.post('/forgot-password', validate(forgotPasswordSchema), asyncHandler(ctrl.forgotPassword));
-router.post('/reset-password', validate(resetPasswordSchema), asyncHandler(ctrl.resetPassword));
-router.post('/refresh', validate(refreshSchema), asyncHandler(ctrl.refresh));
-router.post('/logout', authenticate, validate(logoutSchema), asyncHandler(ctrl.logout));
+// Route all requests to Better Auth node/Express handler
+router.all('/*', toNodeHandler(auth));
 
 export default router;
+

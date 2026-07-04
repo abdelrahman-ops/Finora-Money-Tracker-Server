@@ -5,6 +5,7 @@ import { applyTransaction, reverseTransaction } from '../../services/financialEn
 import { checkDailyLimit, checkBudgetStatus, createAlert } from '../../services/behaviorEngine';
 import { logEvent, EVENT_TYPES } from '../../services/eventService';
 import { CreateTransactionInput } from './validation';
+import { invalidateUserCache } from '../../common/utils/cache';
 
 export class TransactionService {
   async findAll(userId: string, query: { startDate?: string; endDate?: string; accountId?: string; type?: string; page?: number; limit?: number }) {
@@ -70,24 +71,29 @@ export class TransactionService {
       throw new AppError('Duplicate transaction detected. Please wait a moment.', 400);
     }
 
-    // Create transaction + apply effects
+    // Create transaction + apply effects (inside transaction)
+    const session = await mongoose.startSession();
     try {
-      const txn = await Transaction.create([{
-        userId,
-        amount: data.amount,
-        type: data.type,
-        name: data.name || '',
-        note: data.note,
-        accountId: data.accountId,
-        toAccountId: data.type === 'transfer' ? data.toAccountId : undefined,
-        categoryId: data.type !== 'transfer' ? data.categoryId : undefined,
-        debtId: data.debtId,
-        savingsGoalId: data.savingsGoalId,
-        date: new Date(data.date),
-      }]);
+      let resultTxn: any;
+      await session.withTransaction(async () => {
+        const txn = await Transaction.create([{
+          userId,
+          amount: data.amount,
+          type: data.type,
+          name: data.name || '',
+          note: data.note,
+          accountId: data.accountId,
+          toAccountId: data.type === 'transfer' ? data.toAccountId : undefined,
+          categoryId: data.type !== 'transfer' ? data.categoryId : undefined,
+          debtId: data.debtId,
+          savingsGoalId: data.savingsGoalId,
+          date: new Date(data.date),
+        }], { session });
 
-      await applyTransaction(txn[0], userId);
-      await logEvent(userId, EVENT_TYPES.TRANSACTION_CREATED, 'transaction', txn[0]._id.toString(), { after: txn[0].toJSON() });
+        await applyTransaction(txn[0], userId, session);
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_CREATED, 'transaction', txn[0]._id.toString(), { after: txn[0].toJSON() }, session);
+        resultTxn = txn[0];
+      });
 
       // Post-transaction budget check (non-critical, outside session)
       if (data.type === 'expense' && data.categoryId) {
@@ -101,53 +107,135 @@ export class TransactionService {
         } catch { /* non-critical */ }
       }
 
-      return { id: txn[0]._id, transaction: txn[0], limitCheck };
+      invalidateUserCache(userId);
+      return { id: resultTxn._id, transaction: resultTxn, limitCheck };
 
-    } catch (err) {
-      throw err;
+    } catch (err: any) {
+      if (err.message?.includes('replica set') || err.message?.includes('transactions')) {
+        // Fallback for standalone Mongo
+        const txn = await Transaction.create([{
+          userId,
+          amount: data.amount,
+          type: data.type,
+          name: data.name || '',
+          note: data.note,
+          accountId: data.accountId,
+          toAccountId: data.type === 'transfer' ? data.toAccountId : undefined,
+          categoryId: data.type !== 'transfer' ? data.categoryId : undefined,
+          debtId: data.debtId,
+          savingsGoalId: data.savingsGoalId,
+          date: new Date(data.date),
+        }]);
+
+        await applyTransaction(txn[0], userId);
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_CREATED, 'transaction', txn[0]._id.toString(), { after: txn[0].toJSON() });
+
+        if (data.type === 'expense' && data.categoryId) {
+          try {
+            const budgetStatus = await checkBudgetStatus(userId, data.categoryId, data.date);
+            if (budgetStatus.status === 'over') {
+              await createAlert(userId, 'budget_exceeded', `Budget exceeded for ${budgetStatus.categoryName}`, 'critical', data.categoryId);
+            } else if (budgetStatus.status === 'warning') {
+              await createAlert(userId, 'budget_warning', `Near budget limit for ${budgetStatus.categoryName}: ${budgetStatus.pct.toFixed(0)}% used`, 'warning', data.categoryId);
+            }
+          } catch { /* non-critical */ }
+        }
+
+        invalidateUserCache(userId);
+        return { id: txn[0]._id, transaction: txn[0], limitCheck };
+      } else {
+        throw err;
+      }
+    } finally {
+      await session.endSession();
     }
   }
 
   async update(userId: string, id: string, data: CreateTransactionInput) {
+    const session = await mongoose.startSession();
     try {
-      const oldTxn = await Transaction.findOne({ _id: id, userId });
-      if (!oldTxn) throw new AppError('Transaction not found', 404);
+      let updatedTxn: any;
+      await session.withTransaction(async () => {
+        const oldTxn = await Transaction.findOne({ _id: id, userId }).session(session);
+        if (!oldTxn) throw new AppError('Transaction not found', 404);
 
-      await reverseTransaction(oldTxn);
+        await reverseTransaction(oldTxn, session);
 
-      oldTxn.amount = data.amount;
-      oldTxn.type = data.type as any;
-      oldTxn.name = data.name || '';
-      oldTxn.note = data.note;
-      oldTxn.accountId = data.accountId as any;
-      oldTxn.toAccountId = data.type === 'transfer' ? data.toAccountId as any : undefined;
-      oldTxn.categoryId = data.type !== 'transfer' ? data.categoryId as any : undefined;
-      oldTxn.debtId = data.debtId as any;
-      oldTxn.savingsGoalId = data.savingsGoalId as any;
-      oldTxn.date = new Date(data.date);
-      await oldTxn.save();
+        oldTxn.amount = data.amount;
+        oldTxn.type = data.type as any;
+        oldTxn.name = data.name || '';
+        oldTxn.note = data.note;
+        oldTxn.accountId = data.accountId as any;
+        oldTxn.toAccountId = data.type === 'transfer' ? data.toAccountId as any : undefined;
+        oldTxn.categoryId = data.type !== 'transfer' ? data.categoryId as any : undefined;
+        oldTxn.debtId = data.debtId as any;
+        oldTxn.savingsGoalId = data.savingsGoalId as any;
+        oldTxn.date = new Date(data.date);
+        await oldTxn.save({ session });
 
-      await applyTransaction(oldTxn, userId);
-      await logEvent(userId, EVENT_TYPES.TRANSACTION_UPDATED, 'transaction', id, { after: oldTxn.toJSON() });
+        await applyTransaction(oldTxn, userId, session);
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_UPDATED, 'transaction', id, { after: oldTxn.toJSON() }, session);
+        updatedTxn = oldTxn;
+      });
+      invalidateUserCache(userId);
+      return updatedTxn;
+    } catch (err: any) {
+      if (err.message?.includes('replica set') || err.message?.includes('transactions')) {
+        const oldTxn = await Transaction.findOne({ _id: id, userId });
+        if (!oldTxn) throw new AppError('Transaction not found', 404);
 
-      return oldTxn;
+        await reverseTransaction(oldTxn);
 
-    } catch (err) {
-      throw err;
+        oldTxn.amount = data.amount;
+        oldTxn.type = data.type as any;
+        oldTxn.name = data.name || '';
+        oldTxn.note = data.note;
+        oldTxn.accountId = data.accountId as any;
+        oldTxn.toAccountId = data.type === 'transfer' ? data.toAccountId as any : undefined;
+        oldTxn.categoryId = data.type !== 'transfer' ? data.categoryId as any : undefined;
+        oldTxn.debtId = data.debtId as any;
+        oldTxn.savingsGoalId = data.savingsGoalId as any;
+        oldTxn.date = new Date(data.date);
+        await oldTxn.save();
+
+        await applyTransaction(oldTxn, userId);
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_UPDATED, 'transaction', id, { after: oldTxn.toJSON() });
+        invalidateUserCache(userId);
+        return oldTxn;
+      } else {
+        throw err;
+      }
+    } finally {
+      await session.endSession();
     }
   }
 
   async delete(userId: string, id: string) {
+    const session = await mongoose.startSession();
     try {
-      const txn = await Transaction.findOne({ _id: id, userId });
-      if (!txn) throw new AppError('Transaction not found', 404);
+      await session.withTransaction(async () => {
+        const txn = await Transaction.findOne({ _id: id, userId }).session(session);
+        if (!txn) throw new AppError('Transaction not found', 404);
 
-      await reverseTransaction(txn);
-      await Transaction.deleteOne({ _id: id });
-      await logEvent(userId, EVENT_TYPES.TRANSACTION_DELETED, 'transaction', id, { before: txn.toJSON() });
+        await reverseTransaction(txn, session);
+        await Transaction.deleteOne({ _id: id }, { session });
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_DELETED, 'transaction', id, { before: txn.toJSON() }, session);
+      });
+      invalidateUserCache(userId);
+    } catch (err: any) {
+      if (err.message?.includes('replica set') || err.message?.includes('transactions')) {
+        const txn = await Transaction.findOne({ _id: id, userId });
+        if (!txn) throw new AppError('Transaction not found', 404);
 
-    } catch (err) {
-      throw err;
+        await reverseTransaction(txn);
+        await Transaction.deleteOne({ _id: id });
+        await logEvent(userId, EVENT_TYPES.TRANSACTION_DELETED, 'transaction', id, { before: txn.toJSON() });
+        invalidateUserCache(userId);
+      } else {
+        throw err;
+      }
+    } finally {
+      await session.endSession();
     }
   }
 }

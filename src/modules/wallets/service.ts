@@ -1,5 +1,6 @@
 import { Wallet, IWallet } from './model';
 import { AppError } from '../../common/utils/AppError';
+import { invalidateUserCache } from '../../common/utils/cache';
 
 export class WalletService {
   async findAll(userId: string) {
@@ -13,7 +14,9 @@ export class WalletService {
   }
 
   async create(userId: string, data: Partial<IWallet>) {
-    return Wallet.create({ ...data, userId });
+    const wallet = await Wallet.create({ ...data, userId });
+    invalidateUserCache(userId);
+    return wallet;
   }
 
   async update(userId: string, id: string, data: Partial<IWallet>) {
@@ -23,11 +26,13 @@ export class WalletService {
       { new: true, runValidators: true },
     ).lean();
     if (!wallet) throw new AppError('Wallet not found', 404);
+    invalidateUserCache(userId);
     return wallet;
   }
 
   async delete(userId: string, id: string) {
     const result = await Wallet.deleteOne({ _id: id, userId });
     if (result.deletedCount === 0) throw new AppError('Wallet not found', 404);
+    invalidateUserCache(userId);
   }
 }

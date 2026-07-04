@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
+export interface ISavingsContribution {
+  amount: number;
+  date: Date;
+  note?: string;
+  transactionId?: Types.ObjectId;
+}
+
 export interface ISavingsGoal extends Document {
   userId: Types.ObjectId;
   name: string;
@@ -10,8 +17,16 @@ export interface ISavingsGoal extends Document {
   icon: string;
   walletId?: Types.ObjectId;
   status: 'active' | 'completed' | 'cancelled';
+  contributions: ISavingsContribution[];
   createdAt: Date;
 }
+
+const contributionSchema = new Schema<ISavingsContribution>({
+  amount: { type: Number, required: true },
+  date: { type: Date, default: Date.now, required: true },
+  note: { type: String, trim: true },
+  transactionId: { type: Schema.Types.ObjectId, ref: 'Transaction' }
+});
 
 const savingsGoalSchema = new Schema<ISavingsGoal>(
   {
@@ -24,6 +39,7 @@ const savingsGoalSchema = new Schema<ISavingsGoal>(
     icon: { type: String, default: 'piggy-bank' },
     walletId: { type: Schema.Types.ObjectId, ref: 'Wallet' },
     status: { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' },
+    contributions: { type: [contributionSchema], default: [] },
   },
   { timestamps: true },
 );

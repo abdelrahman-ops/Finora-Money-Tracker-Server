@@ -23,15 +23,17 @@ export async function logEvent(
   entityType: string,
   entityId: string | null,
   payload: Record<string, any> = {},
+  session?: any,
 ): Promise<void> {
   try {
-    await Event.create({
+    const options = session ? { session } : {};
+    await Event.create([{
       userId,
       type,
       entityType,
       entityId: entityId || undefined,
       payload: JSON.parse(JSON.stringify(payload)),
-    });
+    }], options);
   } catch (err) {
     logger.error('[EventService] Failed to log event:', type, err);
   }

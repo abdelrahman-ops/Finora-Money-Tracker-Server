@@ -6,7 +6,13 @@ export interface INotification extends Document {
   message: string;
   isRead: boolean;
   type: string;
+  priority: 'low' | 'medium' | 'high';
+  category: string;
+  icon: string;
+  color: string;
+  uniqueKey?: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 const notificationSchema = new Schema<INotification>({
@@ -14,7 +20,12 @@ const notificationSchema = new Schema<INotification>({
   title: { type: String, required: true },
   message: { type: String, required: true },
   isRead: { type: Boolean, default: false },
-  type: { type: String, default: 'info' }
+  type: { type: String, default: 'info' },
+  priority: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+  category: { type: String, default: 'general' },
+  icon: { type: String, default: 'bell' },
+  color: { type: String, default: '#3b82f6' },
+  uniqueKey: { type: String, index: true }
 }, { timestamps: true });
 
 export const Notification = mongoose.model<INotification>('Notification', notificationSchema);

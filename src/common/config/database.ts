@@ -1,13 +1,21 @@
 import mongoose from 'mongoose';
 import { env } from './env';
 import { logger } from '../utils/logger';
+import dns from 'dns';
+
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 export async function connectDatabase(): Promise<void> {
   if (mongoose.connection.readyState >= 1) {
     return;
   }
   try {
-    await mongoose.connect(env.MONGODB_URI);
+    await mongoose.connect(env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000, // Wait 10s for server selection
+      socketTimeoutMS: 45000,
+      // Force IPv4 (helps with some network configurations)
+      family: 4,
+    });
     logger.info('✅ MongoDB connected successfully');
   } catch (error) {
     logger.error('❌ MongoDB connection failed:', error);

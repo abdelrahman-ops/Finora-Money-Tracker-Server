@@ -16,6 +16,7 @@
     "bcryptjs": "^2.4.3",
     "better-auth": "^1.6.23",
     "cors": "^2.8.5",
+    "dns": "^0.2.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-mongo-sanitize": "^2.2.0",

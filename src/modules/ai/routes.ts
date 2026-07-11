@@ -6,6 +6,8 @@ import { AppError } from '../../common/utils/AppError';
 import { User } from '../users/model';
 import { env } from '../../common/config/env';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+import { Setting } from '../settings/model';
 
 const router = Router();
 router.use(authenticate);
@@ -17,7 +19,16 @@ router.post('/verify-admin', asyncHandler(async (req: Request, res: Response) =>
     throw new AppError('Password is required', 400);
   }
 
-  const isMatch = await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH);
+  // Look up admin passcode hash in the database (system setting with dummy userId)
+  const systemUserId = new mongoose.Types.ObjectId('000000000000000000000000');
+  const adminPasscodeSetting = await Setting.findOne({
+    userId: systemUserId,
+    key: 'admin_ai_passcode_hash',
+  });
+
+  const targetHash = adminPasscodeSetting ? adminPasscodeSetting.value : env.ADMIN_PASSWORD_HASH;
+
+  const isMatch = await bcrypt.compare(password, targetHash);
   if (!isMatch) {
     throw new AppError('Invalid admin passcode', 400);
   }

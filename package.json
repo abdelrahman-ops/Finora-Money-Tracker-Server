@@ -10,7 +10,8 @@
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "change-password": "tsx scripts/change-admin-password.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

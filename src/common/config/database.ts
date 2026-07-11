@@ -3,7 +3,11 @@ import { env } from './env';
 import { logger } from '../utils/logger';
 import dns from 'dns';
 
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (err) {
+  logger.warn('Failed to set custom DNS servers (this is normal in serverless/restricted environments):', err);
+}
 
 export async function connectDatabase(): Promise<void> {
   if (mongoose.connection.readyState >= 1) {
@@ -19,7 +23,7 @@ export async function connectDatabase(): Promise<void> {
     logger.info('✅ MongoDB connected successfully');
   } catch (error) {
     logger.error('❌ MongoDB connection failed:', error);
-    process.exit(1);
+    throw error;
   }
 
   mongoose.connection.on('error', (err) => {

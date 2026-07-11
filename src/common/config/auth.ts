@@ -52,6 +52,11 @@ export const auth = betterAuth({
         required: false,
         defaultValue: 'EGP',
       },
+      role: {
+        type: 'string',
+        required: false,
+        defaultValue: 'user',
+      },
     },
   },
   emailVerification: {

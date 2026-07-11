@@ -2,6 +2,7 @@ import { Wallet } from '../modules/wallets/model';
 import { Transaction } from '../modules/transactions/model';
 import { Category } from '../modules/categories/model';
 import { logger } from '../common/utils/logger';
+import { env } from '../common/config/env';
 
 interface ParsedTransaction {
   name: string;
@@ -26,7 +27,7 @@ interface AIAdviceResponse {
 
 export class AIService {
   private static getApiKey(): string | null {
-    return process.env.GEMINI_API_KEY || null;
+    return env.GEMINI_API_KEY || null;
   }
 
   private static async callGemini(prompt: string, expectJson = true): Promise<any> {

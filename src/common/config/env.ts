@@ -32,5 +32,7 @@ export const env = {
   SMTP_FROM: process.env.SMTP_FROM || 'no-reply@finora.app',
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH || 'text',
 } as const;
 

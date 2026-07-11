@@ -7,6 +7,7 @@ export interface IUser extends Document {
   currency: string;
   emailVerified: boolean;
   image?: string;
+  role?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,10 @@ const userSchema = new Schema<IUser>(
     },
     image: {
       type: String,
+    },
+    role: {
+      type: String,
+      default: 'user',
     },
   },
   {

@@ -18,6 +18,16 @@ app.set('trust proxy', 1);
 // Connect to DB for serverless environments (like Vercel) where app.ts is the entry point
 connectDatabase().catch(err => console.error('Initial DB connection error:', err));
 
+// Ensure DB is connected before processing any request
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ─── Security ───
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));

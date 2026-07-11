@@ -2,7 +2,7 @@
   "name": "finora-server",
   "version": "1.0.0",
   "description": "Finora — Production-grade Express TypeScript backend for personal finance",
-  "main": "dist/server.js",
+  "main": "src/app.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",

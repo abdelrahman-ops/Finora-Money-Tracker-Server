@@ -3,10 +3,13 @@ import { env } from './env';
 import { logger } from '../utils/logger';
 import dns from 'dns';
 
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch (err) {
-  logger.warn('Failed to set custom DNS servers (this is normal in serverless/restricted environments):', err);
+// Only set custom DNS servers in local development when not running on Vercel
+if (!process.env.VERCEL && env.NODE_ENV !== 'production') {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch (err) {
+    logger.warn('Failed to set custom DNS servers:', err);
+  }
 }
 
 export async function connectDatabase(): Promise<void> {

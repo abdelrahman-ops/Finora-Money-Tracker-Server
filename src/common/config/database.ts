@@ -18,8 +18,8 @@ export async function connectDatabase(): Promise<void> {
   }
   try {
     await mongoose.connect(env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 10000, // Wait 10s for server selection
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 3000, // Wait 3s for server selection (fail fast in serverless)
+      socketTimeoutMS: 15000,
       // Force IPv4 (helps with some network configurations)
       family: 4,
     });

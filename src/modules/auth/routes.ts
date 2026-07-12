@@ -92,6 +92,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     }
 
     return res.status(201).json({
+      token,
       user: {
         id: user._id,
         email: user.email,
@@ -134,6 +135,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     setSessionCookie(res, token);
 
     return res.status(200).json({
+      token,
       user: {
         id: user._id,
         email: user.email,

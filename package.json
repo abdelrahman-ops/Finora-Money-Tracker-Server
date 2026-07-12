@@ -13,7 +13,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "change-password": "tsx scripts/change-admin-password.ts"
+    "change-password": "tsx scripts/setup-secrets.ts",
+    "setup-secrets": "tsx scripts/setup-secrets.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

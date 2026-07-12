@@ -17,5 +17,4 @@ dist/
 
 # Folders
 secret/
-scripts/
 api/index.js

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../config/auth';
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env';
 import { AppError } from '../utils/AppError';
 
 export interface AuthPayload {
@@ -15,25 +16,57 @@ declare global {
   }
 }
 
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+  const list: Record<string, string> = {};
+  if (!cookieHeader) return list;
+  cookieHeader.split(';').forEach((cookie) => {
+    const parts = cookie.split('=');
+    const name = parts.shift()?.trim();
+    if (name) {
+      list[name] = decodeURIComponent(parts.join('='));
+    }
+  });
+  return list;
+}
+
 /**
- * Better Auth session authentication middleware.
+ * Custom JWT session authentication middleware.
  * Validates request cookies/headers and attaches user context to req.user.
  */
 export function authenticate(req: Request, _res: Response, next: NextFunction): void {
-  auth.api.getSession({ headers: req.headers })
-    .then((sessionData) => {
-      if (!sessionData) {
-        return next(new AppError('Authentication required', 401));
-      }
-      req.user = { 
-        userId: sessionData.user.id, 
-        role: (sessionData.user as any).role || 'user' 
-      };
-      return next();
-    })
-    .catch((err) => {
-      return next(new AppError('Session validation failed: ' + (err.message || 'unknown error'), 401));
-    });
+  try {
+    let token = '';
+
+    // 1. Check Authorization Header (Bearer Token)
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    } 
+    // 2. Check Cookie
+    else if (req.headers.cookie) {
+      const cookies = parseCookies(req.headers.cookie);
+      token = cookies.session_token || '';
+    }
+
+    if (!token) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string; role?: string };
+    
+    if (!decoded || !decoded.userId) {
+      return next(new AppError('Invalid authentication token', 401));
+    }
+
+    req.user = {
+      userId: decoded.userId,
+      role: decoded.role || 'user',
+    };
+
+    return next();
+  } catch (err: any) {
+    return next(new AppError('Session validation failed: ' + (err.message || 'unknown error'), 401));
+  }
 }
 
 /**
@@ -45,4 +78,3 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction): 
   }
   return next();
 }
-

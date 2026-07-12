@@ -79,7 +79,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
         env.JWT_SECRET,
         { expiresIn: '24h' }
       );
-      const verifyUrl = `${env.BETTER_AUTH_URL}/api/auth/verify-email?token=${verificationToken}`;
+      const verifyUrl = `${env.BACKEND_URL}/api/auth/verify-email?token=${verificationToken}`;
       
       logger.info(`✉️ Sending verification link to ${user.email}: ${verifyUrl}`);
       await sendVerificationEmail({
@@ -221,7 +221,7 @@ router.post('/send-verification', async (req: Request, res: Response, next: Next
       env.JWT_SECRET,
       { expiresIn: '24h' }
     );
-    const verifyUrl = `${env.BETTER_AUTH_URL}/api/auth/verify-email?token=${verificationToken}`;
+    const verifyUrl = `${env.BACKEND_URL}/api/auth/verify-email?token=${verificationToken}`;
 
     logger.info(`✉️ Sending verification link to ${user.email}: ${verifyUrl}`);
     await sendVerificationEmail({

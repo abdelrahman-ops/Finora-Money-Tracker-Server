@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "Finora — Production-grade Express TypeScript backend for personal finance",
   "main": "src/app.ts",
-  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --format=esm --packages=external",
+    "build:server": "esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --format=cjs --external:bcryptjs --external:cors --external:dotenv --external:express --external:express-mongo-sanitize --external:express-rate-limit --external:helmet --external:jsonwebtoken --external:mongoose --external:nodemailer --external:uuid --external:winston",
+    "build:api": "esbuild api/index.ts --bundle --platform=node --target=node20 --outfile=api/index.js --format=cjs --external:bcryptjs --external:cors --external:dotenv --external:express --external:express-mongo-sanitize --external:express-rate-limit --external:helmet --external:jsonwebtoken --external:mongoose --external:nodemailer --external:uuid --external:winston",
+    "build": "npm run build:server && npm run build:api",
     "start": "node dist/server.js",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",

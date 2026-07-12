@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Finora — Production-grade Express TypeScript backend for personal finance",
   "main": "src/app.ts",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --format=esm --packages=external",
     "start": "node dist/server.js",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
